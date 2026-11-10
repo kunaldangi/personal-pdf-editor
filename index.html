@@ -94,7 +94,7 @@ Permission is hereby granted, free of charge, to any person obtaining a copy of 
   ctx.drawImage(image,0,0,canvas.width/devicePixelRatio,canvas.height/devicePixelRatio);
   stage.innerHTML='';stage.appendChild(canvas);
   const sample=parseNameBlocks($('names').value)[0]||'Your Name';
-  drawText(ctx,sample,canvas.width/devicePixelRatio,canvas.height/devicePixelRatio,scale);
+  drawText(ctx,sample,canvas.width/devicePixelRatio,canvas.height/devicePixelRatio,(canvas.width/devicePixelRatio)/612);
   canvas.addEventListener('click',e=>{
    const r=canvas.getBoundingClientRect();xNorm=Math.max(0,Math.min(1,(e.clientX-r.left)/r.width));yNorm=Math.max(0,Math.min(1,(e.clientY-r.top)/r.height));
    renderPreview().catch(err=>{console.error(err);setStatus('Could not refresh the preview.')});
@@ -129,7 +129,7 @@ Permission is hereby granted, free of charge, to any person obtaining a copy of 
     octx.clearRect(0,0,out.width,out.height);
     if(mime==='image/jpeg'){octx.fillStyle='#ffffff';octx.fillRect(0,0,out.width,out.height)}
     octx.drawImage(image,0,0,out.width,out.height);
-    drawText(octx,names[i],out.width,out.height,1);
+    drawText(octx,names[i],out.width,out.height,out.width/612);
     const blob=await new Promise((resolve,reject)=>out.toBlob(b=>b?resolve(b):reject(new Error('Image export failed')),mime,mime==='image/jpeg'||mime==='image/webp'?.94:undefined));
     const url=URL.createObjectURL(blob),filename=String(i+1).padStart(3,'0')+'_'+safeName(names[i])+'.'+ext;
     links.push({url,filename});
