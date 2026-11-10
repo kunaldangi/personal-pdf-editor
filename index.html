@@ -68,18 +68,17 @@ Permission is hereby granted, free of charge, to any person obtaining a copy of 
  const amitaFontsReady = Promise.all([amitaRegularFace.load(),amitaBoldFace.load()])
   .then(faces=>{faces.forEach(face=>document.fonts.add(face));return document.fonts.ready;});
  const $=id=>document.getElementById(id), photoInput=$('photo'),stage=$('stage'),status=$('status'),generate=$('generate');
- let image=null,canvas=null,ctx=null,xNorm=.5,yNorm=.72,renderScale=1;
+ let image=null,canvas=null,ctx=null,xNorm=.5,yNorm=.72;
  function setStatus(s){status.textContent=s}
  function parseNameBlocks(value){return value.split(/\r?\n\s*\r?\n+/).map(block=>block.split(/\r?\n/).map(line=>line.trim()).filter(Boolean).join('\n')).filter(Boolean)}
  function safeName(s){return s.normalize('NFKD').replace(/[^\w.-]+/g,'_').replace(/^_+|_+$/g,'').slice(0,70)||'invitation'}
  function selectedFamily(){const v=$('font').value;return v==='Amita-Regular'?'AmitaRegular':v==='Amita-Bold'?'AmitaBold':v==='Courier'?'Courier New':v==='Helvetica'?'Arial':'Times New Roman'}
- function fontPixels(){return Math.max(6,Math.min(120,Number($('size').value)||24))*renderScale}
- function drawText(target,text){
-  const lines=text.split('\n'),size=fontPixels(),lineHeight=size*1.2;
+ function drawText(target,text,drawWidth,drawHeight,scale){
+  const lines=text.split('\n'),size=Math.max(6,Math.min(120,Number($('size').value)||24))*scale,lineHeight=size*1.2;
   target.save();target.font=size+'px "'+selectedFamily()+'"';target.fillStyle=$('color').value;
   target.textAlign=$('align').value;target.textBaseline='middle';
-  const firstY=yNorm*target.canvas.height-((lines.length-1)*lineHeight)/2;
-  lines.forEach((line,i)=>target.fillText(line,xNorm*target.canvas.width,firstY+i*lineHeight));
+  const firstY=yNorm*drawHeight-((lines.length-1)*lineHeight)/2;
+  lines.forEach((line,i)=>target.fillText(line,xNorm*drawWidth,firstY+i*lineHeight));
   target.restore();
  }
  async function renderPreview(){
@@ -93,10 +92,9 @@ Permission is hereby granted, free of charge, to any person obtaining a copy of 
   canvas.style.width=Math.round(image.naturalWidth*scale)+'px';canvas.style.height=Math.round(image.naturalHeight*scale)+'px';
   ctx.setTransform(devicePixelRatio,0,0,devicePixelRatio,0,0);
   ctx.drawImage(image,0,0,canvas.width/devicePixelRatio,canvas.height/devicePixelRatio);
-  renderScale=canvas.width/image.naturalWidth;
   stage.innerHTML='';stage.appendChild(canvas);
   const sample=parseNameBlocks($('names').value)[0]||'Your Name';
-  drawText(ctx,sample);
+  drawText(ctx,sample,canvas.width/devicePixelRatio,canvas.height/devicePixelRatio,scale);
   canvas.addEventListener('click',e=>{
    const r=canvas.getBoundingClientRect();xNorm=Math.max(0,Math.min(1,(e.clientX-r.left)/r.width));yNorm=Math.max(0,Math.min(1,(e.clientY-r.top)/r.height));
    renderPreview().catch(err=>{console.error(err);setStatus('Could not refresh the preview.')});
@@ -131,7 +129,7 @@ Permission is hereby granted, free of charge, to any person obtaining a copy of 
     octx.clearRect(0,0,out.width,out.height);
     if(mime==='image/jpeg'){octx.fillStyle='#ffffff';octx.fillRect(0,0,out.width,out.height)}
     octx.drawImage(image,0,0,out.width,out.height);
-    renderScale=1;drawText(octx,names[i]);
+    drawText(octx,names[i],out.width,out.height,1);
     const blob=await new Promise((resolve,reject)=>out.toBlob(b=>b?resolve(b):reject(new Error('Image export failed')),mime,mime==='image/jpeg'||mime==='image/webp'?.94:undefined));
     const url=URL.createObjectURL(blob),filename=String(i+1).padStart(3,'0')+'_'+safeName(names[i])+'.'+ext;
     links.push({url,filename});
